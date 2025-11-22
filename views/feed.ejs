@@ -4,55 +4,152 @@
   <meta charset="utf-8" />
   <title>Feed</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    body, .bg-main {
+      background: #000 !important;
+    }
+    .bg-blur-overlay,
+    .bg-blur-img {
+      display: none !important;
+    }
+    /* Transparent card with white text */
+    .card-glass {
+      background: rgba(30,30,30,0.22);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 32px 0 rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .card-glass:hover {
+      background: rgba(50,50,50,0.3);
+      border-color: rgba(255,255,255,0.28);
+      box-shadow: 0 8px 36px 0 rgba(0,0,0,0.28);
+    }
+    .card-glass textarea,
+    .card-glass input {
+      background: transparent;
+      color: #fff;
+    }
+    .card-glass textarea::placeholder,
+    .card-glass input::placeholder {
+      color: #bbb;
+    }
+  </style>
 </head>
-<body class="bg-zinc-900 text-white min-h-screen">
-  <%- include('partials/header', { user: user }) %>
 
-  <div class="max-w-4xl mx-auto p-6">
-    <div class="mb-6 bg-zinc-800 p-4 rounded">
-      <form action="/post" method="post" class="flex gap-3">
-        <input name="content" required placeholder="What's happening?" class="flex-1 px-3 py-2 rounded bg-zinc-700" />
-        <button class="bg-blue-600 px-4 rounded">Post</button>
+<body class="relative min-h-screen bg-main text-white">
+  <div class="relative z-10">
+    <%- include('partials/header', { user: user }) %>
+
+    <div class="max-w-7xl mx-auto p-2 sm:p-4 md:p-6">
+      <form action="/post" method="post" class="flex flex-row gap-2 w-full mb-8 justify-center items-center">
+        <textarea
+          name="content"
+          required
+          placeholder="Share something with the world..."
+          class="card-glass flex-1 px-3 py-3 border border-white/30 bg-transparent rounded-lg text-base placeholder-gray-400 focus:border-blue-400 outline-none focus:ring-2 focus:ring-blue-300"
+          style="min-width: 0; box-shadow:none;"
+        ></textarea>
+        <button
+          type="submit"
+          class="flex items-center gap-2 px-2 py-2 rounded border border-blue-600 bg-blue-700 text-white font-semibold transition hover:bg-blue-800"
+          style="box-shadow:none;"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          Post
+        </button>
       </form>
-    </div>
 
-    <% if (!posts || posts.length === 0) { %>
-      <div class="text-zinc-400 text-center">No posts yet.</div>
-    <% } else { %>
-      <div class="flex flex-col gap-4">
-        <% posts.forEach(function(post) { %>
-          <div class="bg-zinc-800 p-4 rounded">
-            <div class="flex items-center gap-3 mb-2">
-              <img src="<%= post.author.profile || '/profile/defaultProfile.png' %>" class="w-10 h-10 rounded-full object-cover" />
-              <div>
-                <div class="font-semibold"><%= post.author.name %></div>
-                <div class="text-xs text-zinc-400"><%= new Date(post.createdAt).toLocaleString() %></div>
+      <% if (!posts || posts.length === 0) { %>
+        <div class="text-gray-300 text-center">No posts yet.</div>
+      <% } else { %>
+        <div class="
+          grid 
+          grid-cols-1
+          sm:grid-cols-2 
+          md:grid-cols-3 
+          xl:grid-cols-4 
+          gap-4 md:gap-6
+        ">
+          <% posts.forEach(function(post) { %>
+            <div class="
+              card-glass
+              rounded-2xl transition
+              flex flex-col
+              p-3
+            " style="min-width:0;">
+              <div class="flex items-center gap-4 mb-3">
+                <img 
+                  src="<%= post.author.profile || '/profile/defaultProfile.png' %>"
+                  class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white/20"
+                  style="background:rgba(100,100,100,0.12); box-shadow:none;"
+                />
+                <div>
+                  <div class="font-semibold text-lg sm:text-xl text-white">
+                    <a href="/user/<%= post.author._id %>"
+                       class="hover:text-blue-400 hover:underline transition">
+                      <%= post.author.name %>
+                    </a>
+                  </div>
+                  <div class="text-xs sm:text-sm text-gray-300/80">
+                    <%= new Date(post.createdAt).toLocaleString() %>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-4 text-white/90 leading-relaxed break-words">
+                <%= post.content %>
+              </div>
+
+              <div class="flex items-center gap-2 mt-auto">
+                <form action="/posts/<%= post._id %>/like" method="post" class="inline">
+                  <% const liked = (post.likes || []).map(l => String(l)).includes(String(user._id)); %>
+                  <button class="p-1 cursor-pointer transition transform hover:scale-110 flex items-center gap-1 focus:outline-none" style="box-shadow:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                      class="w-6 h-6 <%= liked ? 'text-pink-400' : 'text-blue-400' %>"
+                      fill="<%= liked ? 'currentColor' : 'none' %>"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 21s-6.716-4.867-9.447-9.086C.976 9.818 1.508 6.39 4.21 4.821A5.38 5.38 0 0 1 12 6.04a5.38 5.38 0 0 1 7.79-1.219c2.701 1.569 3.234 4.997 1.657 7.093C18.716 16.133 12 21 12 21Z"/>
+                    </svg>
+                    <span class="text-xs ml-1 text-white" style="text-shadow:none;"><%= post.likes ? post.likes.length : 0 %></span>
+                  </button>
+                </form>
+
+                <% if (String(post.author._id) === String(user._id)) { %>
+                  <a href="/posts/<%= post._id %>/edit"
+                    class="ml-auto sm:ml-2 p-1 cursor-pointer transition transform hover:scale-110">
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      class="w-5 h-5 text-yellow-400">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16.862 4.487l1.651-1.652a2.1 2.1 0 113 3L11.25 16.1l-4 1 1-4L16.862 4.487z"/>
+                    </svg>
+                  </a>
+                  <form action="/posts/<%= post._id %>/delete" method="post" class="inline">
+                    <button class="p-1 cursor-pointer transition transform hover:scale-110" style="box-shadow:none;">
+                      <svg xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        class="w-5 h-5 text-pink-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 7h12m-1 0l-.867 12.142A2 2 0 0114.138 21H9.862a2 2 0 01-1.995-1.858L7 7m5-4h-1a2 2 0 00-2 2v2h6V5a2 2 0 00-2-2z"/>
+                      </svg>
+                    </button>
+                  </form>
+                <% } %>
               </div>
             </div>
-
-            <div class="mb-3 break-words"><%= post.content %></div>
-
-            <div class="flex items-center gap-2">
-              <form action="/posts/<%= post._id %>/like" method="post" class="inline">
-                <% const liked = (post.likes || []).map(l => String(l)).includes(String(user._id)); %>
-                <button class="<%= liked ? 'bg-red-600' : 'bg-blue-600' %> px-3 py-1 rounded text-xs">
-                  ❤️ <%= (post.likes || []).length %>
-                </button>
-              </form>
-
-              <a href="/user/<%= post.author._id %>" class="text-xs text-zinc-300 ml-2">View Profile</a>
-
-              <% if (String(post.author._id) === String(user._id)) { %>
-                <a href="/posts/<%= post._id %>/edit" class="ml-auto text-xs bg-yellow-600 px-2 py-1 rounded">Edit</a>
-                <form action="/posts/<%= post._id %>/delete" method="post" class="inline">
-                  <button class="ml-2 text-xs bg-red-600 px-2 py-1 rounded">Delete</button>
-                </form>
-              <% } %>
-            </div>
-          </div>
-        <% }) %>
-      </div>
-    <% } %>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
   </div>
+  <script>
+    // Tailwind handles grid gap/col, nothing needed here.
+  </script>
 </body>
 </html>
