@@ -1,10 +1,10 @@
-require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const upload= require ('./config/multerConfig.cjs');
 
 const User = require('./models/User');
 const Post = require('./models/Post');
@@ -254,6 +254,34 @@ app.get('/posts/:id/edit', isLoggedIn, async (req, res) => {
       res.status(500).send("Server error");
     }
   });
-  
+
+app.get('/profile/upload', isLoggedIn, async (req, res) => {
+  res.render('profileUpload');
+});
+
+// Fix field name: should be 'profile' not 'image'
+const fs = require('fs');
+// Ensure the uploads directory exists
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.post(
+  "/profile/upload",
+  isLoggedIn,
+  upload.single("profile"),
+  async (req, res) => {
+
+    if (!req.file) return res.status(400).send("No file uploaded");
+
+    // Save file into user DB
+    await User.findByIdAndUpdate(req.userId, {
+      profile: "/uploads/" + req.file.filename
+    });
+
+    res.redirect("/profile");
+  }
+);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
