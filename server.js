@@ -36,15 +36,15 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     process.exit(1);
   });
 
-// simple pages
+// simple pages (public)
 app.get('/', (req, res) => res.render('index'));
 app.get('/register', (req, res) => res.render('register'));
 app.get('/login', (req, res) => res.render('login'));
 
-// mount routers (preserves identical routes)
-app.use('/', authRoutes);      // /register, /login, /logout
-app.use('/', postRoutes);      // /post, /posts/:id/...
-app.use('/', profileRoutes);   // /profile, /user/:id, /search, /profile/upload
+// mount routers
+app.use('/', authRoutes);
+app.use('/', postRoutes);
+app.use('/', profileRoutes);
 
 // error handler (last)
 app.use(errorHandler);

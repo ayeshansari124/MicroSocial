@@ -8,7 +8,6 @@ const router = express.Router();
 router.get('/feed', auth, asyncHandler(postController.getFeed));
 router.post('/post', auth, asyncHandler(postController.createPost));
 
-// edit flow
 router.get('/posts/:id/edit', auth, asyncHandler(postController.redirectToEdit));
 router.post('/posts/:id/edit', auth, asyncHandler(postController.submitEdit));
 router.post('/posts/:id/delete', auth, asyncHandler(postController.deletePost));
