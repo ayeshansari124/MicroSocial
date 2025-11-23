@@ -78,6 +78,7 @@
   <%- include('partials/header', { user: user }) %>
 
   <% const displayed = profileUser || user; %>
+  <% const isOwnProfile = !profileUser || String(profileUser._id) === String(user._id); %>
 
   <div class="max-w-3xl mx-auto px-2 sm:px-4 py-4 md:py-6 mt-6 flex flex-col gap-6">
     <!-- Profile Info Top Section: mobile and desktop -->
@@ -91,7 +92,7 @@
         <div class="text-zinc-400 text-sm sm:text-base mb-4 w-full">
           Joined <%= new Date(displayed.createdAt).toLocaleDateString() %>
         </div>
-        <% if (!profileUser) { %>
+        <% if (isOwnProfile) { %>
           <form action="/profile/upload" method="post" enctype="multipart/form-data" class="flex flex-col items-center sm:items-start">
             <input type="file" name="profile" accept="image/*" class="hidden" id="profileUploadInput" onchange="this.form.submit()" />
             <label for="profileUploadInput"
@@ -106,26 +107,33 @@
     </div>
 
     <!-- CREATE POST (Feed style) -->
-    <form action="/post" method="POST" class="flex flex-col sm:flex-row gap-2 w-full mb-6 sm:mb-8 items-stretch sm:items-center">
-      <textarea
-        name="content"
-        placeholder="Post anything..."
-        class="outline-none flex-1 px-3 py-3 text-white rounded-lg text-base placeholder-zinc-400 border-2 border-zinc-700 bg-transparent focus:border-blue-400 focus:ring-2 focus:ring-blue-300 resize-none"
-        rows="2"
-        style="min-width: 0; box-shadow:none; border-width:2px;"
-      ></textarea>
-      <button
-        type="submit"
-        class="flex items-center justify-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition transform hover:scale-105 self-end sm:self-auto"
-        style="box-shadow:none;"
-      >
-        Post
-      </button>
-    </form>
+    <% if (isOwnProfile) { %>
+      <form action="/post" method="POST" class="flex flex-col sm:flex-row gap-2 w-full mb-6 sm:mb-8 items-stretch sm:items-center">
+        <textarea
+          name="content"
+          placeholder="Post anything..."
+          class="outline-none flex-1 px-3 py-3 text-white rounded-lg text-base placeholder-zinc-400 border-2 border-zinc-700 bg-transparent focus:border-blue-400 focus:ring-2 focus:ring-blue-300 resize-none"
+          rows="2"
+          style="min-width: 0; box-shadow:none; border-width:2px;"
+        ></textarea>
+        <button
+          type="submit"
+          class="flex items-center justify-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold transition transform hover:scale-105 self-end sm:self-auto"
+          style="box-shadow:none;"
+        >
+          Post
+        </button>
+      </form>
+    <% } %>
 
     <h2 class="text-xl sm:text-2xl font-semibold mb-4 sm:mb-5">Posts</h2>
 
-    <% const posts = displayed.posts || []; %>
+    <% 
+      // Only show posts that are authored by the profile user (aka displayed user)
+      const posts = (displayed.posts || []).filter(function(post) { 
+        return String(post.author) === String(displayed._id);
+      });
+    %>
 
     <% if (posts.length === 0) { %>
       <div class="text-zinc-400">No posts yet.</div>
@@ -135,7 +143,11 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
       <% posts.forEach(function(post) { %>
         <div class="card-glass p-3 sm:p-4 rounded-2xl flex flex-col">
-          <% if (editPostId && editPostId === String(post._id) && (!profileUser || String(profileUser._id) === String(user._id))) { %>
+          <% 
+            // Only allow editing and deleting if viewing your own profile and you're the author
+            const canEditOrDelete = isOwnProfile && String(post.author) === String(user._id);
+          %>
+          <% if (editPostId && editPostId === String(post._id) && canEditOrDelete) { %>
             <form action="/posts/<%= post._id %>/edit" method="post" class="flex flex-col gap-3">
               <textarea
                 name="content"
@@ -170,7 +182,7 @@
                 </button>
               </form>
               <span class="text-xs text-white ml-1"><%= post.likes.length %></span>
-              <% if (String(post.author) === String(user._id)) { %>
+              <% if (canEditOrDelete) { %>
                 <a href="/posts/<%= post._id %>/edit"
                   class="ml-auto p-1 icon-click transition transform hover:scale-125 border-b-2 border-transparent hover:border-yellow-400"
                   title="Edit Post">
